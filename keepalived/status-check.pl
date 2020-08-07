@@ -11,7 +11,7 @@ $name =~ s|.*/||go;
 openlog $name, "ndelay,pid", "local0";
 
 # Short timeout
-alarm(10);
+alarm(2);
 $SIG{ALARM} = \&handle_alarm;
 
 # Assume any password found in root's config is root's pw
