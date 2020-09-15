@@ -21,7 +21,7 @@ if ( -e "/local/mysql/cluster" ) {
 }
 
 my @save_argv = @ARGV;
-print "$0: launched with ", join(" ", @ARGV), "\n";
+print "$0: launched with ", join( " ", @ARGV ), "\n";
 
 my $res = GetOptions(
     "debug+"       => \$debug,
@@ -122,8 +122,8 @@ if ( !$skip ) {
 
     # re-exec to get latest changes
     print "Re-executing self to get latest changes...\n";
-	my @cmd = ($0, "--skip", @save_argv );
-    print "Command: ", join( " ", @cmd), "\n";
+    my @cmd = ( $0, "--skip", @save_argv );
+    print "Command: ", join( " ", @cmd ), "\n";
     exec(@cmd);
     die "failed to re-exec self.\n";
 }
@@ -291,6 +291,11 @@ elsif ($is_deb) {
     if ( scalar(@aio) < 1 ) {
         print "Installing libaio...\n";
         system( "apt-get", "-y", "install", "libaio1" );
+    }
+
+    # Needed for client tools
+    if ( !-e "/lib/x86_64-linux-gnu/libncurses.so.5" ) {
+        system( "apt-get", "-y", "install", "libncurses5" );
     }
 
     # Make sure we have mysql client installed
