@@ -16,6 +16,9 @@ perl -pi -e "s/#*(innodb_additional_mem_pool_size)/#\1/go" /local/mysql/mysql.co
 perl -pi -e "s/#*(innodb_locks_unsafe_for_binlog)/#\1/go" /local/mysql/mysql.conf
 perl -pi -e "s/#*(innodb_file_format)/#\1/go" /local/mysql/mysql.conf
 
+# No longer needed
+perl -pi -e "s/#*(wsrep_debug)/#\1/go" /local/mysql/mysql.conf
+
 /local/mysql/rc.mysqld
 
 sleep 10

@@ -195,6 +195,9 @@ if ( $flavor eq "mariadb" ) {
     if ( $version eq "10.3" ) {
         $variant = "-glibc_214";
     }
+    if ( $cluster && $version eq "10.5" ) {
+        $variant = "-systemd";
+    }
     $fname    = "$match-linux${variant}-${arch}.tar.gz";
     $upstream = "$mirror/$match/bintar-linux${variant}-${arch}/$fname";
 }
