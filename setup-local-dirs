@@ -113,6 +113,12 @@ if ( $cluster && !-e "/local/mysql/cluster" ) {
     close($out);
 }
 
+# Deal with 10.3 dependency on a lib that is no longer included
+my $lsb = `cat /etc/lsb-release`;
+if ( $cluster && $version =~ /10.3/ && $lsb =~ /focal/sgmo && !-e "/usr/lib/x86_64-linux-gnu/libssl.so.1.0.0" ) {
+    system("apt-get -y install libssl1.0.0");
+}
+
 if ( !$skip ) {
     print "Attempting update from repository...\n";
     if ( -e "/local/mysql/.git" ) {
