@@ -57,7 +57,11 @@ if ( !$mirror ) {
 if ( !$version ) {
     if ( $flavor eq "mariadb" ) {
         if ($cluster) {
+            my $lsb = `cat /etc/lsb-release`;
             $version = "10.3";
+            if ( $lsb =~ /focal/gmo ) {
+                $version = "10.5";
+            }
         }
         else {
             $version = "10.5";
