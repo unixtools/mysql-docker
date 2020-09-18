@@ -37,7 +37,7 @@ my $res = GetOptions(
 );
 if ( !$res || $help ) {
     print
-        "Usage: $0 [--flavor=mariadb|oracle] [--version=10.3|5.7|...] [--subversion=#] [--seed=host] [--mirror=host::mariadb] [--cluster] [--skip] [--debug] [--help]\n";
+        "Usage: $0 [--flavor=mariadb|oracle] [--version=10.5|5.7|...] [--subversion=#] [--seed=host] [--mirror=host::mariadb] [--cluster] [--skip] [--debug] [--help]\n";
     exit(1);
 }
 
@@ -56,7 +56,12 @@ if ( !$mirror ) {
 
 if ( !$version ) {
     if ( $flavor eq "mariadb" ) {
-        $version = "10.3";
+        if ($cluster) {
+            $version = "10.3";
+        }
+        else {
+            $version = "10.5";
+        }
     }
     else {
         $version = "5.7";
@@ -186,9 +191,12 @@ my $fname;
 my $upstream;
 
 if ( $flavor eq "mariadb" ) {
-    my $variant = "glibc_214";
-    $fname    = "$match-linux-${variant}-${arch}.tar.gz";
-    $upstream = "$mirror/$match/bintar-linux-${variant}-${arch}/$fname";
+    my $variant;
+    if ( $version eq "10.3" ) {
+        $variant = "-glibc_214";
+    }
+    $fname    = "$match-linux${variant}-${arch}.tar.gz";
+    $upstream = "$mirror/$match/bintar-linux${variant}-${arch}/$fname";
 }
 elsif ( $flavor eq "oracle" ) {
     $fname    = $match;
