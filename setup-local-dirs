@@ -12,6 +12,11 @@ my $mirror;
 my $version;
 my $flavor = "mariadb";
 
+my $tgt = readlink("/local/mysql/server");
+if ( $tgt =~ /mysql/ ) {
+    $flavor = "oracle";
+}
+
 my $skip  = 0;
 my $debug = 0;
 my $force = 0;
