@@ -54,8 +54,8 @@ if ( !$mirror ) {
     }
     elsif ( $flavor eq "oracle" ) {
 
-        # Alternative mirror: rsync://rsync.mirrorservice.org/ftp.mysql.com/
-        $mirror = "mysql.he.net::mysql";
+        #$mirror = "mysql.he.net::mysql";
+        $mirror = "rsync.mirrorservice.org::ftp.mysql.com";
     }
 }
 
