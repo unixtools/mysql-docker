@@ -13,7 +13,7 @@ my $version;
 my $flavor = "mariadb";
 
 my $tgt = readlink("/local/mysql/server");
-if ( $tgt =~ /mysql/ ) {
+if ( $tgt =~ /mysql-/ ) {
     $flavor = "oracle";
 }
 
