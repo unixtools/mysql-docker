@@ -50,7 +50,8 @@ if ( !$mirror ) {
     if ( $flavor eq "mariadb" ) {
 
         # Alternative mirror: mirrors.syringanetworks.net::mariadb
-        $mirror = "mirror.lstn.net::mariadb";
+        #$mirror = "mirror.lstn.net::mariadb";
+        $mirror = "mirrors.syringanetworks.net::mariadb";
     }
     elsif ( $flavor eq "oracle" ) {
 
