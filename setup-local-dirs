@@ -42,7 +42,7 @@ my $res = GetOptions(
 );
 if ( !$res || $help ) {
     print
-        "Usage: $0 [--flavor=mariadb|oracle] [--version=10.5|5.7|...] [--subversion=#] [--seed=host] [--mirror=host::mariadb] [--cluster] [--skip] [--debug] [--help]\n";
+        "Usage: $0 [--flavor=mariadb|oracle] [--version=10.6|5.7|...] [--subversion=#] [--seed=host] [--mirror=host::mariadb] [--cluster] [--skip] [--debug] [--help]\n";
     exit(1);
 }
 
@@ -62,16 +62,7 @@ if ( !$mirror ) {
 
 if ( !$version ) {
     if ( $flavor eq "mariadb" ) {
-        if ($cluster) {
-            my $lsb = `cat /etc/lsb-release`;
-            $version = "10.5";
-            if ( $lsb =~ /focal/gmo ) {
-                $version = "10.5";
-            }
-        }
-        else {
-            $version = "10.5";
-        }
+        $version = "10.6";
     }
     else {
         $version = "5.7";
