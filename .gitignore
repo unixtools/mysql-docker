@@ -14,3 +14,4 @@ binlogs
 .bash_logout
 .bash_profile
 .bashrc
+libs-compat

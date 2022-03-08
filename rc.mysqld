@@ -26,6 +26,10 @@ if [ -e /local/mysql/bootstrap -a -e /local/mysql/cluster ]; then
 	clusterboot="--wsrep_cluster_address=gcomm://"
 fi
 
+if [ -e /local/mysql/libs-compat ]; then
+	export LD_LIBRARY_PATH=/local/mysql/libs-compat:$LD_LIBRARY_PATH
+fi
+
 # Create db if not present
 if [ ! -e /local/mysql/data/mysql/user.MYD ]; then
     if [ -e /local/mysql/server/scripts/mysql_install_db ]; then # MariaDB
