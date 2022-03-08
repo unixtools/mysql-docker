@@ -132,16 +132,25 @@ if ( $cluster && !-e "/local/mysql/cluster" ) {
 # Extract into libs-compat dir from an older ubuntu18 deb
 my $lsb = `cat /etc/lsb-release`;
 if ( $cluster && $lsb =~ /focal/sgmo && !-e "/local/mysql/libs-compat/libssl.so.1.0.0" ) {
-	system("mkdir", "-p", "/local/mysql/libs-compat");
+    system( "mkdir", "-p", "/local/mysql/libs-compat" );
 
-	chdir("/local/mysql/libs-compat") || die;
-	system("wget", "-O" => "libssl.deb", "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb");
-	system("ar", "x", "libssl.deb", "data.tar.xz");
+    chdir("/local/mysql/libs-compat") || die;
+    system(
+        "wget",
+        "-O" => "libssl.deb",
+        "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.7_amd64.deb"
+    );
+    system( "ar", "x", "libssl.deb", "data.tar.xz" );
 
-	system("tar", "--strip-components" => 4, "-xJvf" => "data.tar.xz", "./usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0", "./usr/lib/x86_64-linux-gnu/libssl.so.1.0.0");
-	unlink("data.tar.xz");
-	unlink("libssl.deb");
-	chdir("/local/mysql") || die;
+    system(
+        "tar",
+        "--strip-components" => 4,
+        "-xJvf"              => "data.tar.xz",
+        "./usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0", "./usr/lib/x86_64-linux-gnu/libssl.so.1.0.0"
+    );
+    unlink("data.tar.xz");
+    unlink("libssl.deb");
+    chdir("/local/mysql") || die;
 }
 
 if ( !$skip ) {
@@ -212,9 +221,13 @@ my $upstream;
 
 if ( $flavor eq "mariadb" ) {
     my $variant;
-    if ( $cluster && $version =~ "10.[5-9]" ) {
+    if ( $cluster && $version =~ /10.[5-9]/ ) {
         $variant = "-systemd";
     }
+    elsif ( $version =~ /10.[6-9]/ ) {
+        $variant = "-systemd";
+    }
+
     $fname    = "$match-linux${variant}-${arch}.tar.gz";
     $upstream = "$mirror/$match/bintar-linux${variant}-${arch}/$fname";
 }
