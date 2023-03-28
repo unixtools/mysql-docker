@@ -62,7 +62,7 @@ if ( !$mirror ) {
 
 if ( !$version ) {
     if ( $flavor eq "mariadb" ) {
-        $version = "10.6";
+        $version = "10.11";
     }
     else {
         $version = "5.7";
@@ -217,6 +217,12 @@ if ( $flavor eq "mariadb" ) {
     }
     elsif ( $version =~ /10.[6-9]/ ) {
         $variant = "-systemd";
+    }
+    elsif ( $version =~ /10\.11/ ) {
+        $variant = "-systemd";
+    }
+    else {
+        die "Unhandled variant.\n";
     }
 
     $fname    = "$match-linux${variant}-${arch}.tar.gz";
