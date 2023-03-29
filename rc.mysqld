@@ -68,6 +68,7 @@ mysqld_safe \
 	--lc-messages=en_US \
 	--lc-messages-dir=$(readlink -f /local/mysql/server)/share \
 	--explicit_defaults_for_timestamp \
+	--plugin-load-add=provider_lzma \
 	$clusterboot \
 	2>&1 | /usr/bin/logger -t MYSQL &
 
