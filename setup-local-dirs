@@ -129,7 +129,7 @@ if ( $cluster && $lsb =~ /focal/sgmo && !-e "/local/mysql/libs-compat/libssl.so.
     system(
         "wget",
         "-O" => "libssl.deb",
-        "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.8_amd64.deb"
+        "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.13_amd64.deb"
     );
     system( "ar", "x", "libssl.deb", "data.tar.xz" );
 
