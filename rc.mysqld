@@ -21,6 +21,10 @@ ulimit -HSn 16000
 mkdir -p /var/run/mysqld
 chown -R mysql:mysql /var/run/mysqld
 
+# If we're using binlogs, make sure dir exists first
+mkdir -p /local/mysql/binlogs
+chown -R mysql:mysql /local/mysql/binlogs
+
 clusterboot=""
 if [ -e /local/mysql/bootstrap -a -e /local/mysql/cluster ]; then
 	clusterboot="--wsrep_cluster_address=gcomm://"
