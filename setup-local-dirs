@@ -10,12 +10,6 @@ my $subversion;
 
 my $mirror;
 my $version;
-my $flavor = "mariadb";
-
-my $tgt = readlink("/local/mysql/server");
-if ( $tgt =~ /mysql-/ ) {
-    $flavor = "oracle";
-}
 
 my $skip  = 0;
 my $debug = 0;
@@ -33,7 +27,6 @@ my $res = GetOptions(
     "cluster"      => \$cluster,
     "force"        => \$force,
     "help"         => \$help,
-    "flavor=s"     => \$flavor,
     "version=s"    => \$version,
     "subversion=s" => \$subversion,
     "seed=s"       => \$seed,
@@ -42,30 +35,18 @@ my $res = GetOptions(
 );
 if ( !$res || $help ) {
     print
-        "Usage: $0 [--flavor=mariadb|oracle] [--version=10.6|5.7|...] [--subversion=#] [--seed=host] [--mirror=host::mariadb] [--cluster] [--skip] [--debug] [--help]\n";
+        "Usage: $0 [--version=10.6|...] [--subversion=#] [--seed=host] [--mirror=host::mariadb] [--cluster] [--skip] [--debug] [--help]\n";
     exit(1);
 }
 
 if ( !$mirror ) {
-    if ( $flavor eq "mariadb" ) {
 
-        # Alternative mirror: mirrors.syringanetworks.net::mariadb
-        $mirror = "mirror.lstn.net::mariadb";
-    }
-    elsif ( $flavor eq "oracle" ) {
-
-        #$mirror = "mysql.he.net::mysql";
-        $mirror = "rsync.mirrorservice.org::ftp.mysql.com";
-    }
+    # Alternative mirror: mirrors.syringanetworks.net::mariadb
+    $mirror = "mirror.lstn.net::mariadb";
 }
 
 if ( !$version ) {
-    if ( $flavor eq "mariadb" ) {
-        $version = "10.11";
-    }
-    else {
-        $version = "5.7";
-    }
+    $version = "10.11";
 }
 
 if ( !-e "/local/mysql" ) {
@@ -168,37 +149,19 @@ if ( !-e "/lib64" ) {
 #
 $mirror =~ s|/$||go;
 my $match;
-if ( $flavor eq "mariadb" ) {
-    open( my $in, "-|" ) || exec( "rsync", $mirror . "/" );
-    while ( defined( my $line = <$in> ) ) {
-        my $best;
-        if ( $line =~ /\s\d\d:\d\d:\d\d\s+((mariadb-${version})\.(\d+))\s*$/o ) {
-            if ( $subversion && $subversion != $3 ) { next; }
-            if ( !$best || $best < $3 ) {
-                $match = $1;
-                $best  = $3;
-            }
+open( my $in, "-|" ) || exec( "rsync", $mirror . "/" );
+while ( defined( my $line = <$in> ) ) {
+    my $best;
+    if ( $line =~ /\s\d\d:\d\d:\d\d\s+((mariadb-${version})\.(\d+))\s*$/o ) {
+        if ( $subversion && $subversion != $3 ) { next; }
+        if ( !$best || $best < $3 ) {
+            $match = $1;
+            $best  = $3;
         }
     }
-    close($in);
 }
-elsif ( $flavor eq "oracle" ) {
-    open( my $in, "-|" ) || exec( "rsync", $mirror . "/Downloads/MySQL-${version}/" );
-    while ( defined( my $line = <$in> ) ) {
-        my $best;
+close($in);
 
-        # mysql-5.7.26-linux-glibc2.12-x86_64.tar.gz
-        if ( $line =~ /\s\d\d:\d\d:\d\d\s+((mysql-${version})\.(\d+)-linux.*x86_64.*.tar.gz)\s*$/o ) {
-            if ( $subversion && $subversion != $3 ) { next; }
-            if ( !$best || $best < $3 ) {
-                $match = $1;
-                $best  = $3;
-            }
-        }
-    }
-    close($in);
-
-}
 if ( !$match ) {
     die "Unable to find match for version($version) subversion($subversion)";
 }
@@ -209,31 +172,26 @@ system( "mkdir", "-p", "/local/mysql/tar" );
 my $fname;
 my $upstream;
 
-if ( $flavor eq "mariadb" ) {
-    my $variant;
-    if ( $cluster && $version =~ /10.[5-9]/ ) {
-        $variant = "-systemd";
-    }
-    elsif ( $version =~ /10.[6-9]/ ) {
-        $variant = "-systemd";
-    }
-    elsif ( $version =~ /10\.11/ ) {
-        $variant = "-systemd";
-    }
-    elsif ( $version =~ /11\./ ) {
-        $variant = "-systemd";
-    }
-    else {
-        die "Unhandled variant.\n";
-    }
+my $variant;
+if ( $cluster && $version =~ /10.[5-9]/ ) {
+    $variant = "-systemd";
+}
+elsif ( $version =~ /10.[6-9]/ ) {
+    $variant = "-systemd";
+}
+elsif ( $version =~ /10\.11/ ) {
+    $variant = "-systemd";
+}
+elsif ( $version =~ /11\./ ) {
+    $variant = "-systemd";
+}
+else {
+    die "Unhandled variant.\n";
+}
 
-    $fname    = "$match-linux${variant}-${arch}.tar.gz";
-    $upstream = "$mirror/$match/bintar-linux${variant}-${arch}/$fname";
-}
-elsif ( $flavor eq "oracle" ) {
-    $fname    = $match;
-    $upstream = "$mirror/Downloads/MySQL-${version}/$match";
-}
+$fname    = "$match-linux${variant}-${arch}.tar.gz";
+$upstream = "$mirror/$match/bintar-linux${variant}-${arch}/$fname";
+
 my $destfile = "/local/mysql/tar/$fname";
 
 if ($seed) {
@@ -345,8 +303,10 @@ elsif ($is_deb) {
         system( "apt-get", "-y", "install", "libncurses5" );
         if ( !-e "/lib/x86_64-linux-gnu/libncurses.so.5" && -e "/lib/x86_64-linux-gnu/libncurses.so.6" ) {
             print "Working around ncurses5 dependency with symlink to ncurses6\n";
-            symlink( "libncurses.so.5", "/lib/x86_64-linux-gnu/libncurses.so.6" );
-            symlink( "libtinfo.so.5",   "/lib/x86_64-linux-gnu/libtinfo.so.6" );
+            unlink("/lib/x86_64-linux-gnu/libncurses.so.5");
+            symlink( "libncurses.so.6", "/lib/x86_64-linux-gnu/libncurses.so.5" );
+            unlink("/lib/x86_64-linux-gnu/libtinfo.so.5");
+            symlink( "libtinfo.so.6", "/lib/x86_64-linux-gnu/libtinfo.so.5" );
         }
     }
 
