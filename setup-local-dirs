@@ -61,7 +61,7 @@ if ( !$mirror ) {
 
 if ( !$version ) {
     if ( $flavor eq "mariadb" ) {
-        $version = "11.4";
+        $version = "10.11";
     }
     else {
         $version = "5.7";
@@ -218,6 +218,9 @@ if ( $flavor eq "mariadb" ) {
         $variant = "-systemd";
     }
     elsif ( $version =~ /10\.11/ ) {
+        $variant = "-systemd";
+    }
+    elsif ( $version =~ /11\./ ) {
         $variant = "-systemd";
     }
     else {
