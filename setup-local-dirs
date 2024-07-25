@@ -345,8 +345,8 @@ elsif ($is_deb) {
         system( "apt-get", "-y", "install", "libncurses5" );
         if ( !-e "/lib/x86_64-linux-gnu/libncurses.so.5" && -e "/lib/x86_64-linux-gnu/libncurses.so.6" ) {
             print "Working around ncurses5 dependency with symlink to ncurses6\n";
-            symlink( "libncurses.so.5", "/lib/x86_64-linux-gnu/libncurses.so.5" );
-            symlink( "libtinfo.so.5",   "/lib/x86_64-linux-gnu/libtinfo.so.5" );
+            symlink( "libncurses.so.5", "/lib/x86_64-linux-gnu/libncurses.so.6" );
+            symlink( "libtinfo.so.5",   "/lib/x86_64-linux-gnu/libtinfo.so.6" );
         }
     }
 
