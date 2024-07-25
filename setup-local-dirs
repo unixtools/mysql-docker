@@ -48,6 +48,7 @@ if ( !$res || $help ) {
 
 if ( !$mirror ) {
     if ( $flavor eq "mariadb" ) {
+
         # Alternative mirror: mirrors.syringanetworks.net::mariadb
         $mirror = "mirror.lstn.net::mariadb";
     }
@@ -60,7 +61,7 @@ if ( !$mirror ) {
 
 if ( !$version ) {
     if ( $flavor eq "mariadb" ) {
-        $version = "10.11";
+        $version = "11.4";
     }
     else {
         $version = "5.7";
@@ -275,13 +276,13 @@ if ( !-e "/local/mysql/mysql.conf" ) {
 
 if ( -d "/etc/mysql" ) {
     unlink("/etc/mysql/my.cnf");
-    system( "cp", "/local/mysql/client.conf", "/etc/mysql/my.cnf" );
-    system( "chown", "root:root", "/etc/mysql/my.cnf" );
+    system( "cp",    "/local/mysql/client.conf", "/etc/mysql/my.cnf" );
+    system( "chown", "root:root",                "/etc/mysql/my.cnf" );
 }
 
 unlink("/etc/my.cnf");
-system( "cp", "/local/mysql/client.conf", "/etc/my.cnf" );
-system( "chown", "root:root", "/etc/my.cnf" );
+system( "cp",    "/local/mysql/client.conf", "/etc/my.cnf" );
+system( "chown", "root:root",                "/etc/my.cnf" );
 
 unlink( glob("/home/local/adm/rc-start/rc.*.mysql") );
 symlink( "/local/mysql/rc.mysqld", "/home/local/adm/rc-start/rc.400.mysql" );
