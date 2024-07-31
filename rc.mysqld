@@ -6,7 +6,11 @@ cd /local/mysql/server
 PATH=/local/mysql/server/bin:$PATH
 
 # Shut down existing instance if any
-mysqladmin shutdown
+if [ -e "/local/mysql/server/bin/mariadb-admin" ]; then
+	mariadb-admin --disable-ssl-verify-server-cert shutdown
+else
+	mysqladmin shutdown
+fi
 
 # Kill if still running
 # Should make this optional
@@ -36,7 +40,18 @@ fi
 
 # Create db if not present
 if [ ! -e /local/mysql/data/mysql/user.MYD ]; then
-    if [ -e /local/mysql/server/scripts/mysql_install_db ]; then # MariaDB
+    if [ -e /local/mysql/server/scripts/mariadb-install-db ]; then # MariaDB
+		/local/mysql/server/scripts/mariadb-install-db \
+		--defaults-extra-file=/local/mysql/mysql.conf \
+		--basedir=$(readlink -f /local/mysql/server) \
+		--user=mysql \
+		--tmpdir=/var/tmp \
+		--datadir=/local/mysql/data \
+		--lc-messages=en_US \
+		--lc-messages-dir=$(readlink -f /local/mysql/server)/share \
+		--explicit_defaults_for_timestamp \
+		$clusterboot
+    elif [ -e /local/mysql/server/scripts/mysql_install_db ]; then # MariaDB
 		/local/mysql/server/scripts/mysql_install_db \
 		--defaults-extra-file=/local/mysql/mysql.conf \
 		--basedir=$(readlink -f /local/mysql/server) \

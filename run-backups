@@ -51,7 +51,12 @@ while ( my $db = readdir($dbdir) ) {
         $locks = "--skip-lock-tables";
     }
 
-    my $cmd = "mysqldump --defaults-file=$tmpfile $locks $db | gzip -v1 -c - > $base/latest/${db}.gz";
+    my $md_cmd = "mysqldump";
+    if ( -e "/local/mysql/server/bin/mariadb-dump" ) {
+        $md_cmd = "mariadb-dump";
+    }
+
+    my $cmd = "${md_cmd} --defaults-file=$tmpfile $locks $db | gzip -v1 -c - > $base/latest/${db}.gz";
     print "+ $cmd\n";
     system($cmd);
 
