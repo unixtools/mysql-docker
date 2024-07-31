@@ -2,7 +2,6 @@
 
 use strict;
 use Getopt::Long;
-use LWP::Simple;
 
 my $help    = 0;
 my $cluster = 0;
@@ -128,7 +127,8 @@ if (   $cluster
         "tar",
         "--strip-components" => 4,
         "-xJvf"              => "data.tar.xz",
-        "./usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0", "./usr/lib/x86_64-linux-gnu/libssl.so.1.0.0"
+        "./usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0",
+        "./usr/lib/x86_64-linux-gnu/libssl.so.1.0.0"
     );
     unlink("data.tar.xz");
     unlink("libssl.deb");
