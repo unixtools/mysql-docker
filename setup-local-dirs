@@ -40,13 +40,11 @@ if ( !$res || $help ) {
 }
 
 if ( !$mirror ) {
-
-    # Alternative mirror: mirrors.syringanetworks.net::mariadb
     $mirror = "mirror.lstn.net::mariadb";
 }
 
 if ( !$version ) {
-    $version = "10.11";
+    $version = "11.4";
 }
 
 if ( !-e "/local/mysql" ) {
@@ -101,8 +99,21 @@ if ( $cluster && !-e "/local/mysql/cluster" ) {
 
 # Deal with galera dependency on a lib that is no longer included
 # Extract into libs-compat dir from an older ubuntu18 deb
-my $lsb = `cat /etc/lsb-release`;
-if ( $cluster && $lsb =~ /focal/sgmo && !-e "/local/mysql/libs-compat/libssl.so.1.0.0" ) {
+my $os;
+if ( -e "/etc/lsb-release" ) {
+    open( my $in, "</etc/lsb-release" );
+    $os = join( "", <$in> );
+    close($in);
+}
+elsif ( -e "/etc/os-release" ) {
+    open( my $in, "</etc/os-release" );
+    $os = join( "", <$in> );
+    close($in);
+}
+if (   $cluster
+    && $os =~ /focal/sgmo
+    && !-e "/local/mysql/libs-compat/libssl.so.1.0.0" )
+{
     system( "mkdir", "-p", "/local/mysql/libs-compat" );
 
     chdir("/local/mysql/libs-compat") || die;
@@ -127,6 +138,7 @@ if ( $cluster && $lsb =~ /focal/sgmo && !-e "/local/mysql/libs-compat/libssl.so.
 if ( !$skip ) {
     print "Attempting update from repository...\n";
     if ( -e "/local/mysql/.git" ) {
+        system("git config --global --add safe.directory /local/mysql");
         system("git pull");
     }
     print "Done.\n";
@@ -287,7 +299,7 @@ if ($is_rpm) {
     if ( !-e "/usr/bin/mysql" ) {
         system( "yum", "-y", "install", "mysql" );
     }
-    if ( !-e "/usr/bin/mytop" ) {
+    if ( $os =~ /focal/ && !-e "/usr/bin/mytop" ) {
         system( "yum", "-y", "install", "mytop" );
     }
 }
@@ -312,10 +324,17 @@ elsif ($is_deb) {
 
     # Make sure we have mysql client installed
     if ( !-e "/usr/bin/mysql" ) {
-        system( "apt-get", "-y", "install", "mysql-client" );
+        if ( $os =~ /bookworm/ ) {
+            system( "apt-get", "-y", "install", "mariadb-client" );
+        }
+        else {
+            system( "apt-get", "-y", "install", "mysql-client" );
+        }
     }
     if ( !-e "/usr/bin/mytop" ) {
-        system( "apt-get", "-y", "install", "mytop" );
+
+        # With debian, this is part of mariadb-client
+        $os =~ /focal/ && system( "apt-get", "-y", "install", "mytop" );
     }
 
 }

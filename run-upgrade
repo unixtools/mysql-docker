@@ -27,4 +27,8 @@ if [ -e "/local/mysql/cluster" ]; then
 	sleep 10
 fi
 
-mysql_upgrade
+if [ -e "/local/mysql/server/bin/mariadb-upgrade" ]; then
+	mariadb-upgrade
+else
+	mysql_upgrade
+fi
