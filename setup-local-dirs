@@ -110,7 +110,7 @@ elsif ( -e "/etc/os-release" ) {
     close($in);
 }
 if (   $cluster
-    && $os =~ /focal/sgmo
+    && $os =~ /(focal|noble)/sgmo
     && !-e "/local/mysql/libs-compat/libssl.so.1.0.0" )
 {
     system( "mkdir", "-p", "/local/mysql/libs-compat" );
