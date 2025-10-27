@@ -43,7 +43,25 @@ if ( !$mirror ) {
 }
 
 if ( !$version ) {
-    $version = "11.4";
+    my $is_avx2 = 0;
+    open( my $in, "</proc/cpuinfo" );
+    while ( defined( my $line = <$in> ) ) {
+        if ( $line =~ /avx2/ ) {
+            $is_avx2++;
+        }
+    }
+    close($in);
+
+    $version = "11.8";
+
+    if ( !$is_avx2 ) {
+		print "\n";
+        print "WARNING: Falling back to 11.4 due to lack of AVX2 instruction set support on current hardware.\n";
+		print "WARNING: 11.4 is LTS supported until 2029.\n";
+        print "WARNING: See https://jira.mariadb.org/browse/MDEV-37970\n";
+		print "\n";
+        $version = "11.4";
+    }
 }
 
 if ( !-e "/local/mysql" ) {
