@@ -55,11 +55,11 @@ if ( !$version ) {
     $version = "11.8";
 
     if ( !$is_avx2 ) {
-		print "\n";
+        print "\n";
         print "WARNING: Falling back to 11.4 due to lack of AVX2 instruction set support on current hardware.\n";
-		print "WARNING: 11.4 is LTS supported until 2029.\n";
+        print "WARNING: 11.4 is LTS supported until 2029.\n";
         print "WARNING: See https://jira.mariadb.org/browse/MDEV-37970\n";
-		print "\n";
+        print "\n";
         $version = "11.4";
     }
 }
