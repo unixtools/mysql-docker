@@ -44,8 +44,13 @@ if ( -e "/local/mysql/server/bin/mariadb-dump" ) {
     $md_cmd = "mariadb-dump";
 }
 
+my $gzip = "gzip -v";
+if ( -e "/usr/bin/pigz" ) {
+    $gzip = "/usr/bin/pigz";
+}
+
 my $cmd
-    = "${md_cmd} --defaults-file=$tmpfile --flush-logs --master-data --all-databases --single-transaction | gzip -v1 -c - > $base/latest/${db}.gz";
+    = "${md_cmd} --defaults-file=$tmpfile --flush-logs --master-data --all-databases --single-transaction | $gzip --rsyncable -1 -c - > $base/latest/${db}.gz";
 print "+ $cmd\n";
 system($cmd);
 

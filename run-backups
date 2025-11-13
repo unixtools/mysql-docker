@@ -56,7 +56,12 @@ while ( my $db = readdir($dbdir) ) {
         $md_cmd = "mariadb-dump";
     }
 
-    my $cmd = "${md_cmd} --defaults-file=$tmpfile $locks $db | gzip -v1 -c - > $base/latest/${db}.gz";
+    my $gzip = "gzip -v";
+    if ( -e "/usr/bin/pigz" ) {
+        $gzip = "/usr/bin/pigz";
+    }
+
+    my $cmd = "${md_cmd} --defaults-file=$tmpfile $locks $db | $gzip --rsyncable -1 -c - > $base/latest/${db}.gz";
     print "+ $cmd\n";
     system($cmd);
 
