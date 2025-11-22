@@ -23,7 +23,11 @@ my $datadir = "/local/mysql/data";
 # Generate a merged config file from several other files
 
 umask(077);
-my ( $fh, $tmpfile ) = tempfile();
+if ( !-d "/local/mysql/tmp" ) {
+    mkdir("/local/mysql/tmp");
+    system("chown", "mysql:mysql", "/local/mysql/tmp");
+}
+my ( $fh, $tmpfile ) = tempfile( "mysql-backups-XXXXXX", DIR => "/local/mysql/tmp", SUFFIX => ".conf" );
 
 my @configs = ( "/etc/my.cnf", "/local/mysql/mysql-base.conf", "/local/mysql/mysql.conf", "/root/.my.cnf" );
 foreach my $cfile (@configs) {
@@ -39,13 +43,15 @@ close($fh);
 
 my $db = "all-master";
 
-my $md_cmd = "mysqldump";
-if ( -e "/local/mysql/server/bin/mariadb-dump" ) {
-    $md_cmd = "mariadb-dump";
+my $md_cmd = "/local/mysql/sbin/wrap-run-root mariadb-dump";
+
+my $gzip = "gzip -v";
+if ( -e "/usr/bin/pigz" ) {
+    $gzip = "/usr/bin/pigz";
 }
 
 my $cmd
-    = "${md_cmd} --defaults-file=$tmpfile --flush-logs --master-data --all-databases --single-transaction | gzip -v1 -c - > $base/latest/${db}.gz";
+    = "${md_cmd} --defaults-file=$tmpfile --flush-logs --master-data --all-databases --single-transaction | $gzip --rsyncable -1 -c - > $base/latest/${db}.gz";
 print "+ $cmd\n";
 system($cmd);
 

@@ -74,11 +74,11 @@ if ( !-e "/local/mysql/backups.conf" ) {
 
     if ($binlogs) {
         print "NOTE: No /local/mysql/backups.conf found, using default/example binlog config.\n";
-        $backups_conf_file = "/local/mysql/example-backups-binlogs.conf";
+        $backups_conf_file = "/local/mysql/defaults/example-backups-binlogs.conf";
     }
     else {
         print "NOTE: No /local/mysql/backups.conf found, using default/example simple config.\n";
-        $backups_conf_file = "/local/mysql/example-backups-simple.conf";
+        $backups_conf_file = "/local/mysql/defaults/example-backups-simple.conf";
     }
 }
 
