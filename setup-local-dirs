@@ -55,6 +55,11 @@ if ( !getpwnam("mysql") ) {
     die;
 }
 
+# Rewrite tag file, including if it doesn't exist
+open(my $out, ">/local/mysql/tag.txt");
+print $out $tag, "\n";
+close($out);
+
 # Determine compiled in paths for system libs
 my $def_socket = "/var/lib/mysql/mysql.sock";
 if ( -e "/usr/bin/mysql" ) {
