@@ -1,5 +1,8 @@
 #!/bin/sh -x
 
+echo "not yet dockerized"
+exit
+
 cd /local/mysql/server
 
 export PATH=/local/mysql/server/bin:/usr/bin:$PATH

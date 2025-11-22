@@ -16,10 +16,15 @@ mkdir -p /local/mysql/data
 chown mysql:mysql /local/mysql/data
 ARGS="$ARGS -v /local/mysql/data:/var/mysql/data"
 
+mkdir -p /var/run/mysql
+chown mysql:mysql /var/run/mysql
+ARGS="$ARGS -v /var/run/mysql:/var/run/mysql"
+
 docker run \
   --rm -it \
   --network host \
   --user $(id -u mysql):$(id -g mysql) \
+  --ulimit nofile=16000:16000 \
   $ARGS \
   mariadb:$TAG \
   "$@"

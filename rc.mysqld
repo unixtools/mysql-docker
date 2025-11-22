@@ -3,93 +3,32 @@
 
 cd /local/mysql/server
 
-PATH=/local/mysql/server/bin:$PATH
+docker update --restart no mysql
+/local/mysql/sbin/wrap-run-root mariadb-admin --disable-ssl-verify-server-cert shutdown
+docker stop mysql
+docker rm mysql
 
-# Shut down existing instance if any
-if [ -e "/local/mysql/server/bin/mariadb-admin" ]; then
-	mariadb-admin --disable-ssl-verify-server-cert shutdown
-else
-	mysqladmin shutdown
-fi
-
-# Kill if still running
-# Should make this optional
-pkill -TERM -x mysqld
-sleep 2
-pkill -KILL -x mysqld
-
-# Raise file limit
-ulimit -HSn 16000
-
-# Make dir for pid file
-mkdir -p /var/run/mysqld
-chown -R mysql:mysql /var/run/mysqld
-
-# If we're using binlogs, make sure dir exists first
-mkdir -p /local/mysql/binlogs
-chown -R mysql:mysql /local/mysql/binlogs
-
-clusterboot=""
+ARGS=""
 if [ -e /local/mysql/bootstrap -a -e /local/mysql/cluster ]; then
-	clusterboot="--wsrep_cluster_address=gcomm://"
-fi
-
-if [ -e /local/mysql/libs-compat ]; then
-	export LD_LIBRARY_PATH=/local/mysql/libs-compat:$LD_LIBRARY_PATH
+	ARGS="$ARGS --wsrep_cluster_address=gcomm://"
 fi
 
 # Create db if not present
-if [ ! -e /local/mysql/data/mysql/user.MYD ]; then
-    if [ -e /local/mysql/server/scripts/mariadb-install-db ]; then # MariaDB
-		/local/mysql/server/scripts/mariadb-install-db \
+if [ ! -e /local/mysql/data/mysql/user.frm ]; then
+    /local/mysql/sbin/wrap-run-mysql \
+        mariadb-upgrade \
 		--defaults-extra-file=/local/mysql/mysql.conf \
-		--basedir=$(readlink -f /local/mysql/server) \
-		--user=mysql \
-		--tmpdir=/var/tmp \
-		--datadir=/local/mysql/data \
-		--lc-messages=en_US \
-		--lc-messages-dir=$(readlink -f /local/mysql/server)/share \
-		--explicit_defaults_for_timestamp \
-		$clusterboot
-    elif [ -e /local/mysql/server/scripts/mysql_install_db ]; then # MariaDB
-		/local/mysql/server/scripts/mysql_install_db \
-		--defaults-extra-file=/local/mysql/mysql.conf \
-		--basedir=$(readlink -f /local/mysql/server) \
-		--user=mysql \
-		--tmpdir=/var/tmp \
-		--datadir=/local/mysql/data \
-		--lc-messages=en_US \
-		--lc-messages-dir=$(readlink -f /local/mysql/server)/share \
-		--explicit_defaults_for_timestamp \
-		$clusterboot
-	elif [ -e /local/mysql/server/bin/mysql_install_db ]; then # MySQL
-		mysqld_safe \
-		--defaults-extra-file=/local/mysql/mysql.conf \
-		--basedir=$(readlink -f /local/mysql/server) \
-		--user=mysql \
-		--datadir=/local/mysql/data \
-		--lc-messages=en_US \
-		--lc-messages-dir=$(readlink -f /local/mysql/server)/share \
-		--explicit_defaults_for_timestamp \
-		--initialize-insecure \
-		$clusterboot
-    else 
-       echo "Must run setup-local-dirs first!"
-       exit 1
-	fi
+		$ARGS
 fi
 
-mysqld_safe \
+/local/mysql/sbin/wrap-detach-mysql \
+    mariadbd \
 	--defaults-extra-file=/local/mysql/mysql.conf \
-	--basedir=$(readlink -f /local/mysql/server) \
-	--user=mysql \
 	--datadir=/local/mysql/data \
-	--lc-messages=en_US \
-	--lc-messages-dir=$(readlink -f /local/mysql/server)/share \
 	--explicit_defaults_for_timestamp \
-	--plugin-load-add=provider_lzma \
-	$clusterboot \
-	2>&1 | /usr/bin/logger -t MYSQL &
+	$ARGS
+
+# add something here to wait until mariadb is running up to a limit?
 
 if [ -e /local/mysql/bootstrap -a -e /local/mysql/cluster ]; then
 	rm -f /local/mysql/bootstrap

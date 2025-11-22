@@ -5,10 +5,18 @@ use Getopt::Long;
 
 my $help    = 0;
 my $cluster = 0;
-my $subversion;
 
-my $mirror;
-my $version;
+my $tag;
+if ( -e "/local/mysql/tag.txt" ) {
+	open(my $in, "/local/mysql/tag.txt");
+	chomp($tag = <$in>);
+	close($in);
+}
+else {
+	open(my $in, "/local/mysql/defaults/tag.txt");
+	chomp($tag = <$in>);
+	close($in);
+}
 
 my $skip  = 0;
 my $debug = 0;
@@ -26,42 +34,13 @@ my $res = GetOptions(
     "cluster"      => \$cluster,
     "force"        => \$force,
     "help"         => \$help,
-    "version=s"    => \$version,
-    "subversion=s" => \$subversion,
-    "seed=s"       => \$seed,
-    "mirror=s"     => \$mirror,
+    "tag=s"    => \$tag,
     "skip"         => \$skip
 );
 if ( !$res || $help ) {
     print
-        "Usage: $0 [--version=10.6|...] [--subversion=#] [--seed=host] [--mirror=host::mariadb] [--cluster] [--skip] [--debug] [--help]\n";
+        "Usage: $0 [--tag=$tag] [--cluster] [--skip] [--debug] [--help]\n";
     exit(1);
-}
-
-if ( !$mirror ) {
-    $mirror = "mirror.lstn.net::mariadb";
-}
-
-if ( !$version ) {
-    my $is_avx2 = 0;
-    open( my $in, "</proc/cpuinfo" );
-    while ( defined( my $line = <$in> ) ) {
-        if ( $line =~ /avx2/ ) {
-            $is_avx2++;
-        }
-    }
-    close($in);
-
-    $version = "11.8";
-
-    if ( !$is_avx2 ) {
-        print "\n";
-        print "WARNING: Falling back to 11.4 due to lack of AVX2 instruction set support on current hardware.\n";
-        print "WARNING: 11.4 is LTS supported until 2029.\n";
-        print "WARNING: See https://jira.mariadb.org/browse/MDEV-37970\n";
-        print "\n";
-        $version = "11.4";
-    }
 }
 
 if ( !-e "/local/mysql" ) {
@@ -89,20 +68,14 @@ if ( -e "/usr/bin/mysql" ) {
     close($in);
 }
 
-# Determine env type
-my $is_rpm = 0;
-my $is_deb = 0;
-if ( ( -e "/bin/rpm" || -e "/usr/bin/rpm" ) && ( !-e "/usr/bin/apt-get" ) ) {
-    $is_rpm = 1;
-}
-elsif ( -e "/usr/bin/apt-get" ) {
+if ( -e "/usr/bin/apt-get" ) {
     $ENV{DEBIAN_FRONTEND} = "noninteractive";
     $is_deb = 1;
 }
 
 chdir("/local/mysql") || die;
 
-print "Attempting update of /local/mysql installation with version $version.\n";
+print "Attempting update of /local/mysql installation with tag $tag.\n";
 if ($cluster) {
     print "Cluster mode is enabled.\n";
 }
@@ -112,45 +85,6 @@ if ( $cluster && !-e "/local/mysql/cluster" ) {
     open( my $out, ">/local/mysql/cluster" );
     print $out "\n";
     close($out);
-}
-
-# Deal with galera dependency on a lib that is no longer included
-# Extract into libs-compat dir from an older ubuntu18 deb
-my $os;
-if ( -e "/etc/lsb-release" ) {
-    open( my $in, "</etc/lsb-release" );
-    $os = join( "", <$in> );
-    close($in);
-}
-elsif ( -e "/etc/os-release" ) {
-    open( my $in, "</etc/os-release" );
-    $os = join( "", <$in> );
-    close($in);
-}
-if (   $cluster
-    && $os =~ /(focal|noble)/sgmo
-    && !-e "/local/mysql/libs-compat/libssl.so.1.0.0" )
-{
-    system( "mkdir", "-p", "/local/mysql/libs-compat" );
-
-    chdir("/local/mysql/libs-compat") || die;
-    system(
-        "wget",
-        "-O" => "libssl.deb",
-        "http://archive.ubuntu.com/ubuntu/pool/main/o/openssl1.0/libssl1.0.0_1.0.2n-1ubuntu5.13_amd64.deb"
-    );
-    system( "ar", "x", "libssl.deb", "data.tar.xz" );
-
-    system(
-        "tar",
-        "--strip-components" => 4,
-        "-xJvf"              => "data.tar.xz",
-        "./usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0",
-        "./usr/lib/x86_64-linux-gnu/libssl.so.1.0.0"
-    );
-    unlink("data.tar.xz");
-    unlink("libssl.deb");
-    chdir("/local/mysql") || die;
 }
 
 if ( !$skip ) {
@@ -169,110 +103,23 @@ if ( !$skip ) {
     die "failed to re-exec self.\n";
 }
 
-my $arch = "x86_64";
-if ( !-e "/lib64" ) {
-    $arch = "i686";
-}
-
-#
-# First determine latest version within the desired series
-#
-$mirror =~ s|/$||go;
-my $match;
-open( my $in, "-|" ) || exec( "rsync", $mirror . "/" );
-while ( defined( my $line = <$in> ) ) {
-    my $best;
-    if ( $line =~ /\s\d\d:\d\d:\d\d\s+((mariadb-${version})\.(\d+))\s*$/o ) {
-        if ( $subversion && $subversion != $3 ) { next; }
-        if ( !$best || $best < $3 ) {
-            $match = $1;
-            $best  = $3;
-        }
-    }
-}
-close($in);
-
-if ( !$match ) {
-    die "Unable to find match for version($version) subversion($subversion)";
-}
-print "Proceeding with retrieval from $match\n";
-
-system( "mkdir", "-p", "/local/mysql/tar" );
-
-my $fname;
-my $upstream;
-
-my $variant;
-if ( $cluster && $version =~ /10.[5-9]/ ) {
-    $variant = "-systemd";
-}
-elsif ( $version =~ /10.[6-9]/ ) {
-    $variant = "-systemd";
-}
-elsif ( $version =~ /10\.11/ ) {
-    $variant = "-systemd";
-}
-elsif ( $version =~ /11\./ ) {
-    $variant = "-systemd";
-}
-else {
-    die "Unhandled variant.\n";
-}
-
-$fname    = "$match-linux${variant}-${arch}.tar.gz";
-$upstream = "$mirror/$match/bintar-linux${variant}-${arch}/$fname";
-
-my $destfile = "/local/mysql/tar/$fname";
-
-if ($seed) {
-    print "Syncing from seed host: $seed\n";
-    system( "rsync", "-avzP", "root\@${seed}:/local/mysql/tar/${fname}", $destfile );
-}
-
-print "Syncing from upstream: $upstream\n";
-system( "rsync", "-avzP", $upstream, $destfile );
-
-my $dirname = $fname;
-$dirname =~ s/\.tar\.gz//;
-
-if ( $dirname =~ /(mysql|Percona|mariadb)/ && -e "/local/mysql/$dirname" && $force ) {
-    system( "rm", "-rf", "/local/mysql/$dirname" );
-}
-
-print "Checking for existence of $dirname:\n";
-if ( !-d "/local/mysql/$dirname" ) {
-    print "Extracting $fname...\n";
-    system( "tar", "--exclude=mysql-test", "--exclude=sql-bench", "-xzf", "tar/$fname" );
-    print "Done.\n";
-}
-else {
-    $debug && print "Already extracted $fname.\n";
-}
-
-system( "rm", "-rf", "$dirname/mysql-test" );
-system( "rm", "-rf", "$dirname/sql-bench" );
-
 system( "mkdir", "-p", "/local/mysql/data" );
 system( "mkdir", "-p", "/var/lib/mysql" );
-
 system( "chown", "-R", "mysql:mysql", "/var/lib/mysql" );
-
-unlink("/local/mysql/server");
-symlink( "/local/mysql/$dirname", "/local/mysql/server" );
 
 if ( !-e "/local/mysql/mysql.conf" ) {
     print "Installing base config...\n";
-    system( "cp", "/local/mysql/mysql-base.conf", "/local/mysql/mysql.conf" );
+    system( "cp", "/local/mysql/defaults/mysql.conf", "/local/mysql/mysql.conf" );
 }
 
 if ( -d "/etc/mysql" ) {
     unlink("/etc/mysql/my.cnf");
-    system( "cp",    "/local/mysql/client.conf", "/etc/mysql/my.cnf" );
+    system( "cp",    "/local/mysql/defaults/client.conf", "/etc/mysql/my.cnf" );
     system( "chown", "root:root",                "/etc/mysql/my.cnf" );
 }
 
 unlink("/etc/my.cnf");
-system( "cp",    "/local/mysql/client.conf", "/etc/my.cnf" );
+system( "cp",    "/local/mysql/defaults/client.conf", "/etc/my.cnf" );
 system( "chown", "root:root",                "/etc/my.cnf" );
 
 unlink( glob("/home/local/adm/rc-start/rc.*.mysql") );
@@ -305,171 +152,14 @@ foreach my $cfile ( "/etc/mysql/my.cnf", "/etc/my.cnf", "/local/mysql/mysql.conf
     }
 }
 
-# Make sure we have libaio installed
-my @aio = ( glob("/usr/lib/libaio*"), glob("/usr/lib64/libaio*"), glob("/lib/x86_64-linux-gnu/libaio*") );
-if ($is_rpm) {
-    if ( scalar(@aio) < 1 ) {
-        print "Installing libaio...\n";
-        system( "yum", "-y", "install", "libaio" );
-    }
-
-    # Make sure we have mysql client installed
-    if ( !-e "/usr/bin/mysql" ) {
-        system( "yum", "-y", "install", "mysql" );
-    }
-    if ( $os =~ /focal/ && !-e "/usr/bin/mytop" ) {
-        system( "yum", "-y", "install", "mytop" );
-    }
-}
-elsif ($is_deb) {
-    if ( scalar(@aio) < 1 ) {
-        print "Installing libaio...\n";
-        system( "apt-get", "-y", "install", "libaio1" );
-    }
-
-    # Needed for client tools
-    if ( !-e "/lib/x86_64-linux-gnu/libncurses.so.5" ) {
-        print "Missing libncurses5, attempting install...\n";
-        system( "apt-get", "-y", "install", "libncurses5" );
-        if ( !-e "/lib/x86_64-linux-gnu/libncurses.so.5" && -e "/lib/x86_64-linux-gnu/libncurses.so.6" ) {
-            print "Working around ncurses5 dependency with symlink to ncurses6\n";
-            unlink("/lib/x86_64-linux-gnu/libncurses.so.5");
-            symlink( "libncurses.so.6", "/lib/x86_64-linux-gnu/libncurses.so.5" );
-            unlink("/lib/x86_64-linux-gnu/libtinfo.so.5");
-            symlink( "libtinfo.so.6", "/lib/x86_64-linux-gnu/libtinfo.so.5" );
-        }
-    }
-
-    # Make sure we have mysql client installed
-    if ( !-e "/usr/bin/mysql" ) {
-        if ( $os =~ /bookworm/ ) {
-            system( "apt-get", "-y", "install", "mariadb-client" );
-        }
-        else {
-            system( "apt-get", "-y", "install", "mysql-client" );
-        }
-    }
-    if ( !-e "/usr/bin/mytop" ) {
-
-        # With debian, this is part of mariadb-client
-        $os =~ /focal/ && system( "apt-get", "-y", "install", "mytop" );
-    }
-
-}
-
-open( my $ldd, "-|" ) || exec( "ldd", "/local/mysql/server/bin/mysqld", "/local/mysql/server/bin/mysql" );
-my $need_crypto    = 0;
-my $need_readline5 = 0;
-my $need_libnuma   = 0;
-while ( defined( my $line = <$ldd> ) ) {
-    if ( $line =~ /libcrypto.so./ && $line =~ /not found/ ) {
-        print "Missing required library: $line\n";
-        $need_crypto++;
-    }
-    if ( $line =~ /readline.so.5/ && $line =~ /not found/ ) {
-        print "Missing required library: $line\n";
-        $need_readline5++;
-    }
-    if ( $line =~ /libnuma.so.1/ && $line =~ /not found/ ) {
-        print "Missing required library: $line\n";
-        $need_libnuma++;
-    }
-}
-close($ldd);
-
-if ($need_readline5) {
-    print "Need to install compat-readline5\n";
-    if ($is_rpm) {
-        print "Installing compat-readline5...\n";
-        system( "yum", "-y", "install", "compat-readline5" );
-    }
-    elsif ($is_deb) {
-        exit;
-    }
-
-}
-
-if ($need_libnuma) {
-    print "Need to install libnuma\n";
-    if ($is_rpm) {
-        print "Installing numactl...\n";
-        system( "yum", "-y", "install", "numactl" );
-    }
-    elsif ($is_deb) {
-        print "Installing numactl...\n";
-        system( "apt-get", "-y", "install", "numactl" );
-    }
-}
-
-if ($need_crypto) {
-    exit;
-}
-
-if ($cluster) {
-    print "Checking wsresp_sst_rsync script...\n";
-
-    my $fname = "/local/mysql/server/bin/wsrep_sst_rsync";
-    open( my $in, $fname );
-    my $data = join( "", <$in> );
-    close($in);
-
-    my $newdata = $data;
-    $newdata =~ s|^uid =|#uid =|go;
-    $newdata =~ s|^gid =|#gid =|go;
-
-    if ( $newdata ne $data ) {
-        print "Fixing uid/gid in wsrep_sst_rsync...\n";
-        open( my $out, ">$fname.tmp" );
-        print $out $newdata;
-        close($out);
-        rename( $fname . ".tmp", $fname );
-    }
-
-    print "Checking mysqld_safe script...\n";
-
-    my $fname = "/local/mysql/server/bin/mysqld_safe";
-    open( my $in, $fname );
-    my $data = join( "", <$in> );
-    close($in);
-
-    my $newdata = $data;
-    $newdata =~ s|^max_wsrep_restarts=\d+|max_wsrep_restarts=99999|mgo;
-
-    if ( $newdata ne $data ) {
-        print "Fixing max_wsrep_restarts in mysqld_safe...\n";
-        open( my $out, ">$fname.tmp" );
-        print $out $newdata;
-        close($out);
-        rename( $fname . ".tmp", $fname );
-        chmod( 0755, $fname );
-    }
-
-    print "\n";
-}
-
-# Check mysqld_safe for bogus MY_PWD overwrite
-{
-    my $fname = "/local/mysql/server/bin/mysqld_safe";
-    open( my $in, $fname );
-    my $data = join( "", <$in> );
-    close($in);
-
-    my $repl = q(MY_PWD=`dirname $0`; MY_PWD=`dirname $MY_PWD`);
-
-    my $newdata = $data;
-    $newdata =~ s|MY_PWD='/.*?'|$repl|mgo;
-
-    if ( $newdata ne $data ) {
-        print "Fixing MY_PWD overwrite in mysqld_safe...\n";
-        if ( !-e $fname . ".orig" ) {
-            system( "cp", $fname, "${fname}.orig" );
-        }
-        open( my $out, ">$fname.tmp" );
-        print $out $newdata;
-        close($out);
-        rename( $fname . ".tmp", $fname );
-        chmod( 0755, $fname );
-    }
+# Make sure we have mysql client installed
+if ( !-e "/usr/bin/mysql" ) {
+	if ( $os =~ /bookworm/ ) {
+		system( "apt-get", "-y", "install", "mariadb-client" );
+	}
+	else {
+		system( "apt-get", "-y", "install", "mysql-client" );
+	}
 }
 
 print "MySQL local directory setup completed.\n";

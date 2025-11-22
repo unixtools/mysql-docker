@@ -11,9 +11,6 @@ ARGS="-v /local/mysql:/local/mysql"
 if [ -e /var/run/mysqld ]; then
   ARGS="$ARGS -v /var/run/mysqld:/var/run/mysqld"
 fi
-if [ -e /root/.my.cnf ]; then
-  ARGS="$ARGS -v /root/.my.cnf:/root/.my.cnf"
-fi
 
 mkdir -p /local/mysql/data
 chown mysql:mysql /local/mysql/data
@@ -24,9 +21,13 @@ chown mysql:mysql /var/run/mysql
 ARGS="$ARGS -v /var/run/mysql:/var/run/mysql"
 
 docker run \
-  --rm -it \
+  --detach \
+  --restart unless-stopped \
   --network host \
-  --user 0:0 \
+  --name mysql \
+  --log-opt max-size=50m \
+  --log-opt max-file=10 \
+  --user $(id -u mysql):$(id -g mysql) \
   --ulimit nofile=16000:16000 \
   $ARGS \
   mariadb:$TAG \
