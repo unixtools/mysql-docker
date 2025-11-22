@@ -18,6 +18,18 @@ else {
     close($in);
 }
 
+my $os;
+if ( -e "/etc/lsb-release" ) {
+    open( my $in, "</etc/lsb-release" );
+    $os = join( "", <$in> );
+    close($in);
+}
+elsif ( -e "/etc/os-release" ) {
+    open( my $in, "</etc/os-release" );
+    $os = join( "", <$in> );
+    close($in);
+}
+
 my $skip  = 0;
 my $debug = 0;
 my $force = 0;
