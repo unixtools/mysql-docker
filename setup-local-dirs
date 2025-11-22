@@ -8,14 +8,14 @@ my $cluster = 0;
 
 my $tag;
 if ( -e "/local/mysql/tag.txt" ) {
-	open(my $in, "/local/mysql/tag.txt");
-	chomp($tag = <$in>);
-	close($in);
+    open( my $in, "/local/mysql/tag.txt" );
+    chomp( $tag = <$in> );
+    close($in);
 }
 else {
-	open(my $in, "/local/mysql/defaults/tag.txt");
-	chomp($tag = <$in>);
-	close($in);
+    open( my $in, "/local/mysql/defaults/tag.txt" );
+    chomp( $tag = <$in> );
+    close($in);
 }
 
 my $skip  = 0;
@@ -30,16 +30,15 @@ my @save_argv = @ARGV;
 print "$0: launched with ", join( " ", @ARGV ), "\n";
 
 my $res = GetOptions(
-    "debug+"       => \$debug,
-    "cluster"      => \$cluster,
-    "force"        => \$force,
-    "help"         => \$help,
-    "tag=s"    => \$tag,
-    "skip"         => \$skip
+    "debug+"  => \$debug,
+    "cluster" => \$cluster,
+    "force"   => \$force,
+    "help"    => \$help,
+    "tag=s"   => \$tag,
+    "skip"    => \$skip
 );
 if ( !$res || $help ) {
-    print
-        "Usage: $0 [--tag=$tag] [--cluster] [--skip] [--debug] [--help]\n";
+    print "Usage: $0 [--tag=$tag] [--cluster] [--skip] [--debug] [--help]\n";
     exit(1);
 }
 
@@ -56,7 +55,7 @@ if ( !getpwnam("mysql") ) {
 }
 
 # Rewrite tag file, including if it doesn't exist
-open(my $out, ">/local/mysql/tag.txt");
+open( my $out, ">/local/mysql/tag.txt" );
 print $out $tag, "\n";
 close($out);
 
@@ -75,7 +74,6 @@ if ( -e "/usr/bin/mysql" ) {
 
 if ( -e "/usr/bin/apt-get" ) {
     $ENV{DEBIAN_FRONTEND} = "noninteractive";
-    $is_deb = 1;
 }
 
 chdir("/local/mysql") || die;
@@ -120,12 +118,12 @@ if ( !-e "/local/mysql/mysql.conf" ) {
 if ( -d "/etc/mysql" ) {
     unlink("/etc/mysql/my.cnf");
     system( "cp",    "/local/mysql/defaults/client.conf", "/etc/mysql/my.cnf" );
-    system( "chown", "root:root",                "/etc/mysql/my.cnf" );
+    system( "chown", "root:root",                         "/etc/mysql/my.cnf" );
 }
 
 unlink("/etc/my.cnf");
 system( "cp",    "/local/mysql/defaults/client.conf", "/etc/my.cnf" );
-system( "chown", "root:root",                "/etc/my.cnf" );
+system( "chown", "root:root",                         "/etc/my.cnf" );
 
 unlink( glob("/home/local/adm/rc-start/rc.*.mysql") );
 symlink( "/local/mysql/rc.mysqld", "/home/local/adm/rc-start/rc.400.mysql" );
@@ -134,6 +132,16 @@ system( "rm",    "-rf", "/local/mysql-db-backups/bin" );
 system( "mkdir", "-p",  "/local/mysql-db-backups/data" );
 system( "mkdir", "-p",  "/local/mysql-db-backups/latest" );
 system( "chown", "-R",  "mysql:mysql", "/local/mysql" );
+
+# Make sure we have mysql client installed
+if ( !-e "/usr/bin/mysql" ) {
+    if ( $os =~ /bookworm/ ) {
+        system( "apt-get", "-y", "install", "mariadb-client" );
+    }
+    else {
+        system( "apt-get", "-y", "install", "mysql-client" );
+    }
+}
 
 #
 # Modify socket path in various config files
@@ -155,16 +163,6 @@ foreach my $cfile ( "/etc/mysql/my.cnf", "/etc/my.cnf", "/local/mysql/mysql.conf
         print $out $newcfg;
         close($out);
     }
-}
-
-# Make sure we have mysql client installed
-if ( !-e "/usr/bin/mysql" ) {
-	if ( $os =~ /bookworm/ ) {
-		system( "apt-get", "-y", "install", "mariadb-client" );
-	}
-	else {
-		system( "apt-get", "-y", "install", "mysql-client" );
-	}
 }
 
 print "MySQL local directory setup completed.\n";
