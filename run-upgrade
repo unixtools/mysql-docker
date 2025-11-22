@@ -1,11 +1,6 @@
 #!/bin/sh -x
 
-echo "not yet dockerized"
-exit
-
-cd /local/mysql/server
-
-export PATH=/local/mysql/server/bin:/usr/bin:$PATH
+cd /local/mysql
 
 /local/mysql/setup-local-dirs $*
 
@@ -30,8 +25,4 @@ if [ -e "/local/mysql/cluster" ]; then
 	sleep 10
 fi
 
-if [ -e "/local/mysql/server/bin/mariadb-upgrade" ]; then
-	mariadb-upgrade
-else
-	mysql_upgrade
-fi
+/local/mysql/sbin/wrap-exec-root mariadb-upgrade
