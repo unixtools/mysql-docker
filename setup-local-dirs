@@ -177,4 +177,6 @@ foreach my $cfile ( "/etc/mysql/my.cnf", "/etc/my.cnf", "/local/mysql/mysql.conf
     }
 }
 
+system("/local/mysql/sbin/wrap-pull");
+
 print "MySQL local directory setup completed.\n";
