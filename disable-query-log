@@ -1,5 +1,6 @@
-#!/bin/sh -x
+#!/bin/sh
 
 mysql <<EOF
 set global general_log='OFF';
+show variables like '%general_log%';
 EOF
