@@ -4,6 +4,9 @@ mysql <<EOF
 set global slow_query_log_file='/local/mysql/slow-queries.log';
 set global slow_query_log='ON';
 set global long_query_time=2;
+show global variables like '%slow_query%';
+show global variables like '%long_query%';
+show global variables like '%log_queries%';
 EOF
 
 echo You may also want: set global log_queries_not_using_indexes='ON'

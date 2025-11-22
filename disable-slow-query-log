@@ -3,4 +3,7 @@
 mysql <<EOF
 set global slow_query_log='OFF';
 set global log_queries_not_using_indexes='OFF';
+show global variables like '%slow_query%';
+show global variables like '%long_query%';
+show global variables like '%log_queries%';
 EOF
