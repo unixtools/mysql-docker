@@ -8,8 +8,14 @@ fi
 
 ARGS=""
 ARGS="-v /local/mysql:/local/mysql"
-if [ -e /var/run/mysqld ]; then
-  ARGS="$ARGS -v /var/run/mysqld:/var/run/mysqld"
+if [ ! -e /var/run/mysqld ]; then
+  mkdir -p /var/run/mysql
+  chown mysql:mysql /var/run/mysqld
+fi
+ARGS="$ARGS -v /var/run/mysqld:/var/run/mysqld"
+
+if [ -e /root/.my.cnf ]; then
+  ARGS="$ARGS -v /root/.my.cnf:/root/.my.cnf"
 fi
 
 mkdir -p /local/mysql/data

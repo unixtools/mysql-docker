@@ -1,7 +1,5 @@
 #!/bin/bash -x
-# /bin/sh causes error with ulimit on ubuntu
-
-cd /local/mysql/server
+cd /local/mysql
 
 docker update --restart no mysql
 /local/mysql/sbin/wrap-run-root mariadb-admin --disable-ssl-verify-server-cert shutdown
