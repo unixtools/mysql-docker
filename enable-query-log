@@ -1,6 +1,7 @@
-#!/bin/sh -x
+#!/bin/sh
 
 mysql <<EOF
 set global general_log='ON';
 set global general_log_file='/local/mysql/queries.log';
+show variables like '%general_log%';
 EOF

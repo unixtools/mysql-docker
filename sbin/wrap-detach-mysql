@@ -1,0 +1,40 @@
+#!/bin/bash
+
+if [ -e /local/mysql/tag.txt ]; then
+  TAG=$(cat /local/mysql/tag.txt)
+else
+  TAG=$(cat /local/mysql/defaults/tag.txt)
+fi
+
+ARGS=""
+ARGS="-v /local/mysql:/local/mysql"
+
+mkdir -p /var/run/mysql
+chown mysql:mysql /var/run/mysqld
+ARGS="$ARGS -v /var/run/mysqld:/var/run/mysqld"
+
+touch /root/.my.cnf
+chown root:root /root/.my.cnf
+ARGS="$ARGS -v /root/.my.cnf:/root/.my.cnf"
+
+mkdir -p /local/mysql/data
+chown mysql:mysql /local/mysql/data
+ARGS="$ARGS -v /local/mysql/data:/var/mysql/data"
+
+mkdir -p /var/run/mysql
+chown mysql:mysql /var/run/mysql
+ARGS="$ARGS -v /var/run/mysql:/var/run/mysql"
+
+docker run \
+  --detach \
+  --restart unless-stopped \
+  --network host \
+  --name mysql \
+  --log-opt max-size=50m \
+  --log-opt max-file=10 \
+  --user $(id -u mysql):$(id -g mysql) \
+  --ulimit nofile=16000:16000 \
+  $ARGS \
+  mariadb:$TAG \
+  "$@"
+

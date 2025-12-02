@@ -23,7 +23,11 @@ my $datadir = "/local/mysql/data";
 # Generate a merged config file from several other files
 
 umask(077);
-my ( $fh, $tmpfile ) = tempfile();
+if ( !-d "/local/mysql/tmp" ) {
+    mkdir("/local/mysql/tmp");
+    system( "chown", "mysql:mysql", "/local/mysql/tmp" );
+}
+my ( $fh, $tmpfile ) = tempfile( "mysql-backups-XXXXXX", DIR => "/local/mysql/tmp", SUFFIX => ".conf" );
 
 my @configs = ( "/etc/my.cnf", "/local/mysql/mysql-base.conf", "/local/mysql/mysql.conf", "/root/.my.cnf" );
 foreach my $cfile (@configs) {
@@ -51,10 +55,7 @@ while ( my $db = readdir($dbdir) ) {
         $locks = "--skip-lock-tables";
     }
 
-    my $md_cmd = "mysqldump";
-    if ( -e "/local/mysql/server/bin/mariadb-dump" ) {
-        $md_cmd = "mariadb-dump";
-    }
+    my $md_cmd = "/local/mysql/sbin/wrap-run-root mariadb-dump";
 
     my $gzip = "gzip -v";
     if ( -e "/usr/bin/pigz" ) {
@@ -81,5 +82,5 @@ system("/local/mysql/clean-backups");
 
 if ( !-e "/local/mysql-db-backups/skip-analyze" ) {
     print "Auto checking tables...\n";
-    system("mysqlcheck -A -a");
+    system( "/local/mysql/sbin/wrap-run-root", "mariadb-check", "-A", "-a" );
 }
