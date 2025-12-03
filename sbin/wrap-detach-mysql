@@ -25,6 +25,9 @@ mkdir -p /var/run/mysql
 chown mysql:mysql /var/run/mysql
 ARGS="$ARGS -v /var/run/mysql:/var/run/mysql"
 
+# Make sure to pass in timezone from host
+ARGS="$ARGS -v /etc/localtime:/etc/localtime"
+
 docker run \
   --detach \
   --restart unless-stopped \
