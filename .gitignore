@@ -5,6 +5,7 @@ query.log
 queries.log
 slow-queries.log
 cluster
+bootstrap
 binlogs
 .bash_logout
 .bash_profile
