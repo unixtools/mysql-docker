@@ -24,9 +24,13 @@ ARGS="$ARGS -v /var/run/mysql:/var/run/mysql"
 # Make sure to pass in timezone from host
 ARGS="$ARGS -v /etc/localtime:/etc/localtime"
 
+# Allow bootstrapping
+ARGS="$ARGS -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=1"
+
 docker run \
   --rm -it \
   --network host \
+  --name mysql \
   --user $(id -u mysql):$(id -g mysql) \
   --ulimit nofile=16000:16000 \
   $ARGS \
