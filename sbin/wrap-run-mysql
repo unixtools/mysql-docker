@@ -27,6 +27,7 @@ ARGS="$ARGS -v /etc/localtime:/etc/localtime"
 docker run \
   --rm -it \
   --network host \
+  --name mysql \
   --user $(id -u mysql):$(id -g mysql) \
   --ulimit nofile=16000:16000 \
   $ARGS \
