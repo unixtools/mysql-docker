@@ -1,0 +1,11 @@
+#!/bin/bash
+
+. /local/mysql/sbin/docker-common.sh
+
+docker run \
+  --rm -it \
+  --name mysql \
+  --network host \
+  $ARGS \
+  mariadb:$TAG \
+  "$@"

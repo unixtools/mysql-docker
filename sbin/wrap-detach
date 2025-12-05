@@ -1,0 +1,15 @@
+#!/bin/bash
+
+. /local/mysql/sbin/docker-common.sh
+
+docker run \
+  --detach \
+  --restart unless-stopped \
+  --network host \
+  --name mysql \
+  --log-opt max-size=50m \
+  --log-opt max-file=10 \
+  --ulimit nofile=16000:16000 \
+  $ARGS \
+  mariadb:$TAG \
+  "$@"

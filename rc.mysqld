@@ -2,7 +2,7 @@
 cd /local/mysql
 
 docker update --restart no mysql
-/local/mysql/sbin/wrap-run-root mariadb-admin --disable-ssl-verify-server-cert shutdown
+/local/mysql/sbin/wrap-exec mariadb-admin --disable-ssl-verify-server-cert shutdown
 docker stop mysql
 docker rm mysql
 
@@ -16,13 +16,13 @@ fi
 
 # Create db if not present
 if [ ! -e /local/mysql/data/mysql/user.frm ]; then
-    /local/mysql/sbin/wrap-run-mysql \
+    /local/mysql/sbin/wrap-run \
         mariadb-upgrade \
 		--defaults-extra-file=/local/mysql/mysql.conf \
 		$ARGS
 fi
 
-/local/mysql/sbin/wrap-detach-mysql \
+/local/mysql/sbin/wrap-detach \
     mariadbd \
 	--defaults-extra-file=/local/mysql/mysql.conf \
 	--datadir=/local/mysql/data \
