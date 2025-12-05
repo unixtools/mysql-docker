@@ -7,7 +7,9 @@ docker stop mysql
 docker rm mysql
 
 # Clean any pid file
-rm -f /local/mysql/data/wsrep_sst.pid
+if [ -e /local/mysql/cluster ]; then
+    rm -f /local/mysql/data/wsrep_sst.pid
+fi
 
 ARGS=""
 if [ -e /local/mysql/bootstrap -a -e /local/mysql/cluster ]; then
