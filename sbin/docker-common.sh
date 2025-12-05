@@ -9,18 +9,17 @@ fi
 ARGS=""
 ARGS="-v /local/mysql:/local/mysql"
 
-mkdir -p /var/run/mysqld
+# For PID
+mkdir -p /var/run/mysql
 chown mysql:mysql /var/run/mysqld
 ARGS="$ARGS -v /var/run/mysqld:/var/run/mysqld"
 
+# Root connection parameters
 touch /root/.my.cnf
 chown root:root /root/.my.cnf
 ARGS="$ARGS -v /root/.my.cnf:/root/.my.cnf"
 
-mkdir -p /local/mysql/data
-chown mysql:mysql /local/mysql/data
-ARGS="$ARGS -v /local/mysql/data:/var/mysql/data"
-
+# For connection socket
 mkdir -p /var/run/mysql
 chown mysql:mysql /var/run/mysql
 ARGS="$ARGS -v /var/run/mysql:/var/run/mysql"
@@ -31,13 +30,10 @@ ARGS="$ARGS -v /etc/localtime:/etc/localtime"
 # Allow bootstrapping
 ARGS="$ARGS -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=1"
 
-docker run \
-  --rm -it \
-  --network host \
-  --name mysql \
-  --user 0:0 \
-  --ulimit nofile=16000:16000 \
-  $ARGS \
-  mariadb:$TAG \
-  "$@"
+# Limits
+ARGS="$ARGS --ulimit nofile=16000:16000"
 
+# Customize entrypoint and environment variables
+ARGS="$ARGS --entrypoint /local/mysql/sbin/entrypoint-custom.sh"
+ARGS="$ARGS -e MYSQL_UID=$(id -u mysql)"
+ARGS="$ARGS -e MYSQL_GID=$(id -g mysql)"

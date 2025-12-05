@@ -2,6 +2,5 @@
 
 docker exec \
   -it \
-  --user 0:0 \
   mysql \
   "$@"
