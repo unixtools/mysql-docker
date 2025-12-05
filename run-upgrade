@@ -25,4 +25,4 @@ if [ -e "/local/mysql/cluster" ]; then
 	sleep 10
 fi
 
-/local/mysql/sbin/wrap-exec-root mariadb-upgrade
+/local/mysql/sbin/wrap-exec mariadb-upgrade
