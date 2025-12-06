@@ -43,7 +43,7 @@ close($fh);
 
 my $db = "all-master";
 
-my $md_cmd = "/local/mysql/sbin/wrap-run-root mariadb-dump";
+my $md_cmd = "/local/mysql/sbin/wrap-run mariadb-dump";
 
 my $gzip = "gzip -v";
 if ( -e "/usr/bin/pigz" ) {

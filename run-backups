@@ -55,7 +55,7 @@ while ( my $db = readdir($dbdir) ) {
         $locks = "--skip-lock-tables";
     }
 
-    my $md_cmd = "/local/mysql/sbin/wrap-run-root mariadb-dump";
+    my $md_cmd = "/local/mysql/sbin/wrap-run mariadb-dump";
 
     my $gzip = "gzip -v";
     if ( -e "/usr/bin/pigz" ) {
@@ -82,5 +82,5 @@ system("/local/mysql/clean-backups");
 
 if ( !-e "/local/mysql-db-backups/skip-analyze" ) {
     print "Auto checking tables...\n";
-    system( "/local/mysql/sbin/wrap-run-root", "mariadb-check", "-A", "-a" );
+    system( "/local/mysql/sbin/wrap-run", "mariadb-check", "-A", "-a" );
 }
