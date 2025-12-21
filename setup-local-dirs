@@ -74,14 +74,33 @@ close($out);
 # Determine compiled in paths for system libs
 my $def_socket = "/var/lib/mysql/mysql.sock";
 if ( -e "/usr/bin/mysql" ) {
-    open( my $in, "-|", "strings", "/usr/bin/mysql" );
-    while ( defined( my $line = <$in> ) ) {
-        if ( $line =~ m|^(/.*mysqld*.sock)$|o ) {
-            $def_socket = $1;
-            print "Found default socket from /usr/bin/mysql: $def_socket\n";
+    my $found = 0;
+
+    if ( -e "/usr/bin/strings" ) {
+        open( my $in, "-|", "strings", "/usr/bin/mysql" );
+        while ( defined( my $line = <$in> ) ) {
+            if ( $line =~ m|^(/.*mysqld*.sock)$|o ) {
+                $def_socket = $1;
+                print "Found default socket from /usr/bin/mysql via strings: $def_socket\n";
+                $found++;
+            }
         }
+        close($in);
     }
-    close($in);
+    else {
+        open( my $in, "<", "/usr/bin/mysql" );
+        while ( defined( my $line = <$in> ) ) {
+            if ( $line =~ m|\x{00}(/[a-z0-9\/]+?/mysqld*.sock)|smio ) {
+                $def_socket = $1;
+                print "Found default socket from /usr/bin/mysql via binary: $def_socket\n";
+                $found++;
+            }
+        }
+        close($in);
+    }
+    if ( !$found ) {
+        print "Did not find mysql socket path.\n";
+    }
 }
 
 if ( -e "/usr/bin/apt-get" ) {
