@@ -37,3 +37,11 @@ ARGS="$ARGS --ulimit nofile=16000:16000"
 ARGS="$ARGS --entrypoint /local/mysql/sbin/entrypoint-custom.sh"
 ARGS="$ARGS -e MYSQL_UID=$(id -u mysql)"
 ARGS="$ARGS -e MYSQL_GID=$(id -g mysql)"
+
+TTY_ARG="-it"
+TTY=$(/usr/bin/tty)
+case $TTY in
+  *not*)
+    TTY_ARG="-i"
+    ;;
+esac

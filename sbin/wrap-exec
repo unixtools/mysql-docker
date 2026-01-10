@@ -1,6 +1,8 @@
 #!/bin/bash
 
+. /local/mysql/sbin/docker-common.sh
+
 docker exec \
-  -it \
+  $TTY_ARG \
   mysql \
   "$@"

@@ -3,7 +3,8 @@
 . /local/mysql/sbin/docker-common.sh
 
 docker run \
-  --rm -it \
+  --rm \
+  $TTY_ARG \
   --name mysql \
   --network host \
   $ARGS \
