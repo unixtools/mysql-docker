@@ -28,6 +28,7 @@ if ( !-d "/local/mysql/tmp" ) {
     system( "chown", "mysql:mysql", "/local/mysql/tmp" );
 }
 my ( $fh, $tmpfile ) = tempfile( "mysql-backups-XXXXXX", DIR => "/local/mysql/tmp", SUFFIX => ".conf" );
+system( "chown", "mysql:mysql", $tmpfile);
 
 my @configs = ( "/etc/my.cnf", "/local/mysql/mysql-base.conf", "/local/mysql/mysql.conf", "/root/.my.cnf" );
 foreach my $cfile (@configs) {
