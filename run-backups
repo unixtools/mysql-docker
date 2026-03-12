@@ -3,6 +3,40 @@
 use strict;
 use File::Temp qw(tempfile);
 use File::Path;
+use Getopt::Long;
+use JSON;
+
+my $config = {};
+open( my $in, "/local/mysql/backups.conf" );
+my $raw = join( "", <$in> );
+close($in);
+eval { $config = decode_json($raw); };
+
+my $help;
+my $debug;
+my $skip_lock_tables;
+my $single_transaction;
+my $database;
+
+if ( $config->{settings}->{"single-transaction"} ) {
+    $single_transaction = 1;
+}
+if ( $config->{settings}->{"skip-lock-tables"} ) {
+    $skip_lock_tables = 1;
+}
+
+my $res = GetOptions(
+    "skip-lock-tables+"   => \$skip_lock_tables,
+    "single-transaction+" => \$single_transaction,
+    "help+"               => \$help,
+    "debug+"              => \$debug,
+    "database|db=s"       => \$database
+);
+
+if ( !$res || $help ) {
+    print "$0 [--skip-lock-tables] [--single-transaction] [--help] [--debug] [--database db]\n";
+    exit(0);
+}
 
 $ENV{PATH} = "/local/mysql/server/bin:" . $ENV{PATH};
 my @ts = localtime(time);
@@ -47,13 +81,19 @@ while ( my $db = readdir($dbdir) ) {
     next if ( $db eq "." || $db eq ".." );
     next if ( $db eq "lost+found" );
     next if ( $db eq "performance_schema" );
+    next if ( $database && $db ne $database );
     next if ( !-d "$datadir/$db" );
     next if ( !-e "$datadir/$db/db.opt" && !glob("$datadir/$db/*.frm") );
 
     # Unsafe, but cuts impact
     my $locks = "";
-    if ( $ARGV[0] eq "--skip-lock-tables" ) {
+    if ($skip_lock_tables) {
         $locks = "--skip-lock-tables";
+    }
+
+    my $single = "";
+    if ($single_transaction) {
+        $single = "--single-transaction";
     }
 
     my $md_cmd = "/local/mysql/sbin/wrap-exec mariadb-dump";
@@ -63,7 +103,8 @@ while ( my $db = readdir($dbdir) ) {
         $gzip = "/usr/bin/pigz";
     }
 
-    my $cmd = "${md_cmd} --defaults-file=$tmpfile $locks $db | $gzip --rsyncable -1 -c - > $base/latest/${db}.gz";
+    my $cmd
+        = "${md_cmd} --defaults-file=$tmpfile $locks $single $db | $gzip --rsyncable -1 -c - > $base/latest/${db}.gz";
     print "+ $cmd\n";
     system($cmd);
 
@@ -83,5 +124,10 @@ system("/local/mysql/clean-backups");
 
 if ( !-e "/local/mysql-db-backups/skip-analyze" ) {
     print "Auto checking tables...\n";
-    system( "/local/mysql/sbin/wrap-exec", "mariadb-check", "-A", "-a" );
+    if ($database) {
+        system( "/local/mysql/sbin/wrap-exec", "mariadb-check", "-a", $database );
+    }
+    else {
+        system( "/local/mysql/sbin/wrap-exec", "mariadb-check", "-A", "-a" );
+    }
 }
