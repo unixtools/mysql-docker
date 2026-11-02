@@ -9,5 +9,5 @@ docker run \
   --network host \
   --pull always \
   $ARGS \
-  mariadb:$TAG \
+  mirror.gcr.io/mariadb:$TAG \
   "$@"

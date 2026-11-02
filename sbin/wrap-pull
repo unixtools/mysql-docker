@@ -2,4 +2,4 @@
 
 . /local/mysql/sbin/docker-common.sh
 
-docker pull mariadb:$TAG "$@"
+docker pull mirror.gcr.io/mariadb:$TAG "$@"
